@@ -26,6 +26,10 @@ func GetOAuthClient(cfg *config.OAuthConfig) *http.Client {
 		TokenURL:   google.JWTTokenURL,
 	}
 
+	if cfg.ImpersonateEmail != nil {
+		conf.Subject = *cfg.ImpersonateEmail
+	}
+
 	// Return an OAuth http client based on private key from service account.
 	return conf.Client(oauth2.NoContext)
 

@@ -23,6 +23,7 @@ import (
 const (
 	version        = "1.0.0"
 	realtimePrefix = "/v1/realtime"
+	booksPrefix    = "/v1/books"
 	metricsPath    = "/metrics"
 	healthPath     = "/health"
 	versionPath    = "/version"
@@ -46,7 +47,8 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle(versionPath, api.VersionHandler(version))
-	mux.Handle(realtimePrefix, api.RealTimeHandler(cfg.AnalyticsOAuth))
+	mux.Handle(realtimePrefix, api.RealTimeHandler(cfg))
+	mux.Handle(booksPrefix, api.BooksHandler(cfg))
 	mux.HandleFunc(healthPath, api.HealthHandler)
 	mux.Handle(metricsPath, promhttp.Handler())
 

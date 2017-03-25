@@ -16,12 +16,12 @@ const (
 // realTimeHandler implements a handler.
 type realTimeHandler struct {
 	Client *realtime.Client
-	Config *config.OAuthConfig
+	Config *config.AppConfig
 }
 
 // RealTimeHandler handles all https requests to the /realtime api.
-func RealTimeHandler(cfg *config.OAuthConfig) http.Handler {
-	client := common.GetOAuthClient(cfg)
+func RealTimeHandler(cfg *config.AppConfig) http.Handler {
+	client := common.GetOAuthClient(cfg.AnalyticsOAuth)
 	realtimeClient := realtime.NewClient(realtime.WithHTTPClient(client))
 	return &realTimeHandler{
 		Config: cfg,
