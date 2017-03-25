@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/eguevara/dasher/common"
 	"github.com/eguevara/dasher/config"
@@ -37,8 +38,18 @@ func BooksHandler(cfg *config.AppConfig) http.Handler {
 }
 
 func (b *booksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
+
+	// Call Prometheus Collector to instrument requests.
+	reportRequestReceived(serviceBooks)
 	response, err := b.GetBooks()
+	if err != nil {
+		reportRequestFailed(*r, err)
+	}
 	common.Respond(w, response, err)
+
+	// Call Prometheus Collector to instrument service duration.
+	reportServiceCompleted(serviceBooks, startTime)
 }
 
 // GetBooks returns a list of Google Books you've read.
