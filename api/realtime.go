@@ -31,9 +31,8 @@ func RealTimeHandler(cfg *config.AppConfig) http.Handler {
 
 // RealTimeResponse stores the json api response.
 type RealTimeResponse struct {
-	Report    string    `json:"report"`
-	TimeStamp time.Time `json:"timestamp"`
-	Value     string    `json:"value"`
+	Report string `json:"report"`
+	Value  string `json:"value"`
 }
 
 func (rt *realTimeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -62,15 +61,14 @@ func (rt *realTimeHandler) GetMetrics(ids, metrics string) (*RealTimeResponse, e
 		Metrics: metrics,
 	}
 
-	resp, err := rt.Client.RealTime(opts)
+	resp, err := rt.Client.GetRealTime(opts)
 	if err != nil {
 		return nil, err
 	}
 
 	response := &RealTimeResponse{
-		Report:    metrics,
-		Value:     resp.TotalsForAllResults.RtActiveUsers,
-		TimeStamp: resp.TimeStamp,
+		Report: metrics,
+		Value:  *resp.TotalsForAllResults.RtActiveUsers,
 	}
 	return response, nil
 
