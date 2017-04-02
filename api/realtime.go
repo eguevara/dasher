@@ -36,23 +36,20 @@ type RealTimeResponse struct {
 }
 
 func (rt *realTimeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
+	defer func(begin time.Time) {
+		requestCount(serviceRealtime)
+		requestLatency(serviceRealtime, begin)
+	}(time.Now())
 
 	ids := r.URL.Query().Get("ids")
 	metrics := r.URL.Query().Get("metrics")
 
-	// Call Prometheus Collector to instrument requests.
-	reportRequestReceived(serviceRealtime)
-
 	response, err := rt.GetMetrics(ids, metrics)
-
 	if err != nil {
 		reportRequestFailed(*r, err)
 	}
-	common.Respond(w, response, err)
 
-	// Call Prometheus Collector to instrument service duration.
-	reportServiceCompleted(serviceRealtime, startTime)
+	common.Respond(w, response, err)
 }
 
 func (rt *realTimeHandler) GetMetrics(ids, metrics string) (*RealTimeResponse, error) {

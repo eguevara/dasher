@@ -21,16 +21,16 @@ type versionHandler struct {
 }
 
 func (h *versionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
+	defer func(begin time.Time) {
+		requestCount(serviceVersion)
+		requestLatency(serviceVersion, begin)
+	}(time.Now())
+
 	response := VersionResponse{
 		Version: h.version,
 	}
 
-	// Call Prometheus Collector to instrument requests.
-	reportRequestReceived(serviceVersion)
-
 	common.Respond(w, response, nil)
-	reportServiceCompleted(serviceVersion, startTime)
 }
 
 // VersionHandler handles http requests for the /version api.

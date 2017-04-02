@@ -13,7 +13,7 @@ var (
 		prometheus.CounterOpts{
 			Namespace: "dasher",
 			Subsystem: "http",
-			Name:      "received_total",
+			Name:      "request_count",
 			Help:      "Counter of requests received into the system.",
 		}, []string{"service"})
 
@@ -29,7 +29,7 @@ var (
 		prometheus.HistogramOpts{
 			Namespace: "dasher",
 			Subsystem: "http",
-			Name:      "successful_duration_seconds",
+			Name:      "request_latency_microseconds",
 			Help:      "Bucketed histogram of processing time (s) of successfully handled requests (non-watches), by service.",
 			Buckets:   prometheus.ExponentialBuckets(0.0005, 2, 13),
 		}, []string{"service"})
@@ -41,11 +41,11 @@ func init() {
 	prometheus.MustRegister(successfulEventsHandlingTime)
 }
 
-func reportRequestReceived(service string) {
+func requestCount(service string) {
 	incomingEvents.WithLabelValues(service).Inc()
 }
 
-func reportServiceCompleted(service string, startTime time.Time) {
+func requestLatency(service string, startTime time.Time) {
 	successfulEventsHandlingTime.WithLabelValues(service).Observe(time.Since(startTime).Seconds())
 }
 

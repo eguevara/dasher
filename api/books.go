@@ -38,18 +38,17 @@ func BooksHandler(cfg *config.AppConfig) http.Handler {
 }
 
 func (b *booksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
+	defer func(begin time.Time) {
+		requestCount(serviceBooks)
+		requestLatency(serviceBooks, begin)
+	}(time.Now())
 
-	// Call Prometheus Collector to instrument requests.
-	reportRequestReceived(serviceBooks)
 	response, err := b.GetBooks()
 	if err != nil {
 		reportRequestFailed(*r, err)
 	}
-	common.Respond(w, response, err)
 
-	// Call Prometheus Collector to instrument service duration.
-	reportServiceCompleted(serviceBooks, startTime)
+	common.Respond(w, response, err)
 }
 
 // GetBooks returns a list of Google Books you've read.
