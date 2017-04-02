@@ -24,7 +24,6 @@ import (
 const (
 	version        = "1.0.0"
 	realtimePrefix = "/v1/realtime"
-	booksPrefix    = "/v1/books"
 	metricsPath    = "/metrics"
 	healthPath     = "/health"
 	versionPath    = "/version"
@@ -91,7 +90,11 @@ func appHandlers(cfg *config.AppConfig) http.Handler {
 	r := mux.NewRouter()
 	r.Handle(versionPath, api.VersionHandler(version)).Methods("GET")
 	r.Handle(realtimePrefix, api.RealTimeHandler(cfg)).Methods("GET")
-	r.Handle(booksPrefix, api.BooksHandler(cfg)).Methods("GET")
+
+	books := api.NewBooksHandler(cfg)
+	r.HandleFunc("/v1/books", books.List).Methods("GET")
+	r.HandleFunc("/v1/books/{id}", books.ListNotesByVolumeID).Methods("GET")
+
 	r.HandleFunc(healthPath, api.HealthHandler).Methods("GET")
 	r.Handle(metricsPath, promhttp.Handler())
 
