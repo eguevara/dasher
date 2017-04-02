@@ -12,12 +12,13 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/negroni"
 
 	"github.com/eguevara/dasher/api"
 	"github.com/eguevara/dasher/config"
 	"github.com/eguevara/dasher/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -36,34 +37,13 @@ func init() {
 
 func main() {
 
-	var (
-		flagHTTPAddr   = flag.String("web.listen-address", "", "HTTP service address.")
-		flagConfigPath = flag.String("config.file", "./config.json", "application configuration file")
-	)
-
-	flag.Parse()
-
-	cfg := appConfig(*flagHTTPAddr, *flagConfigPath)
-
-	mux := http.NewServeMux()
-	mux.Handle(versionPath, api.VersionHandler(version))
-	mux.Handle(realtimePrefix, api.RealTimeHandler(cfg))
-	mux.Handle(booksPrefix, api.BooksHandler(cfg))
-	mux.HandleFunc(healthPath, api.HealthHandler)
-	mux.Handle(metricsPath, promhttp.Handler())
-
-	n := negroni.New()
-
-	// Add Request Logger Middleware
-	n.UseFunc(middleware.RequestLogger)
-
-	// Apply the mux to negroni.
-	n.UseHandler(mux)
+	// Set up application configuration.
+	cfg := appConfig()
 
 	// Create a new server and set timeout values.
 	server := http.Server{
 		Addr:           cfg.Address,
-		Handler:        n,
+		Handler:        appHandlers(cfg),
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -105,11 +85,41 @@ func main() {
 
 }
 
-func appConfig(address, file string) *config.AppConfig {
+func appHandlers(cfg *config.AppConfig) http.Handler {
 
-	configFile := filepath.Join(file)
+	// Using gorilla mux for richer routing
+	r := mux.NewRouter()
+	r.Handle(versionPath, api.VersionHandler(version)).Methods("GET")
+	r.Handle(realtimePrefix, api.RealTimeHandler(cfg)).Methods("GET")
+	r.Handle(booksPrefix, api.BooksHandler(cfg)).Methods("GET")
+	r.HandleFunc(healthPath, api.HealthHandler).Methods("GET")
+	r.Handle(metricsPath, promhttp.Handler())
+
+	n := negroni.New()
+
+	// Add Request Logger Middleware
+	n.UseFunc(middleware.RequestLogger)
+
+	// Add Application handler Middleware
+	n.UseFunc(middleware.AppHandler)
+
+	// Apply the mux to negroni.
+	n.UseHandler(r)
+
+	return n
+}
+
+func appConfig() *config.AppConfig {
+
+	var (
+		flagHTTPAddr   = flag.String("web.listen-address", "", "HTTP service address (0.0.0.0:3000)")
+		flagConfigPath = flag.String("config.file", "./config.json", "application configuration file")
+	)
+
+	flag.Parse()
+
+	configFile := filepath.Join(*flagConfigPath)
 	data, err := ioutil.ReadFile(configFile)
-
 	if err != nil {
 		log.Fatalf("DASHER error reading config.json: %v", err)
 	}
@@ -120,10 +130,9 @@ func appConfig(address, file string) *config.AppConfig {
 	}
 
 	// Allow address flag override.
-	if address != "" {
-		config.Address = address
+	if *flagHTTPAddr != "" {
+		config.Address = *flagHTTPAddr
 	}
 
 	return config
-
 }
