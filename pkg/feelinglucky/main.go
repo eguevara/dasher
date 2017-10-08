@@ -3,12 +3,11 @@ package feelinglucky
 import (
 	"fmt"
 	"log"
-	"math/rand"
-	"time"
 
 	"github.com/eguevara/dasher/common"
 	"github.com/eguevara/dasher/config"
 	books "github.com/eguevara/go-books"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // LuckyService defines the behavior required by types that implement a new
@@ -84,8 +83,7 @@ func (l *lucky) Annotation() (*LuckyAnnotation, error) {
 		return nil, fmt.Errorf("no annotations found: %v", l.Title)
 	}
 
-	generator := rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
-	randomIndex := generator.Intn(len(list))
+	randomIndex := rand.Intn(len(list))
 
 	annotation := &LuckyAnnotation{
 		Title:      l.Title,
@@ -106,8 +104,7 @@ func (l *lucky) book() (*books.Volume, error) {
 		return nil, err
 	}
 
-	generator := rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
-	randomIndex := generator.Intn(len(volumes))
+	randomIndex := rand.Intn(len(volumes))
 
 	l.Title = *volumes[randomIndex].Info.Title
 
