@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/eguevara/dasher/api"
@@ -14,10 +15,18 @@ import (
 	books "github.com/eguevara/go-books"
 )
 
+const (
+	defaultDotFolder  = ".booksctl"
+	defaultConfigFile = "config.json"
+	defaultPEMFile    = "booksctl.pem"
+)
+
+var defaultHomeDirectory = os.Getenv("HOME")
+
 func main() {
 
 	var (
-		flagConfigPath = flag.String("config-file", "./config.json", "application configuration file")
+		flagConfigPath = flag.String("config-file", defaultConfigFile, "application configuration file")
 		flagBookID     = flag.String("book-id", "", "the id of the book")
 		flagShowBooks  = flag.Bool("show-books", false, "show all books for a shelf")
 		flagLucky      = flag.Bool("feeling-lucky", false, "feeling lucky")
@@ -84,8 +93,7 @@ func main() {
 }
 
 func buildConfigFromFie(file *string) *config.AppConfig {
-
-	configFile := filepath.Join(*file)
+	configFile := filepath.Join(defaultHomeDirectory, defaultDotFolder, *file)
 	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("DASHER error reading config.json: %v", err)
@@ -94,6 +102,10 @@ func buildConfigFromFie(file *string) *config.AppConfig {
 	config := &config.AppConfig{}
 	if err := json.Unmarshal(data, &config); err != nil {
 		log.Fatalf("DASHER setting up app configuration: %v", err)
+	}
+
+	if config.BooksOAuth.PrivateFilePath == "" {
+		config.BooksOAuth.PrivateFilePath = filepath.Join(defaultHomeDirectory, defaultDotFolder, defaultPEMFile)
 	}
 
 	return config
