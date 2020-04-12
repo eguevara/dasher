@@ -29,6 +29,7 @@ func main() {
 		flagConfigPath = flag.String("config-file", defaultConfigFile, "application configuration file")
 		flagBookID     = flag.String("book-id", "", "the id of the book")
 		flagShowBooks  = flag.Bool("show-books", false, "show all books for a shelf")
+		flagShowBookShelf  = flag.Bool("show-bookshelf", false, "show all bookshelfs")
 		flagLucky      = flag.Bool("feeling-lucky", false, "feeling lucky")
 	)
 
@@ -51,8 +52,22 @@ func main() {
 		fmt.Printf("\"%v\n\n\n%v\n", *quote.SelectedText, quote.Title)
 	}
 
-	if *flagBookID != "" || *flagShowBooks {
+	if *flagBookID != "" || *flagShowBooks || *flagShowBookShelf {
 		svc := api.NewBooksHandler(cfg)
+
+		if *flagShowBookShelf == true {
+			opts := &books.ShelvesListOptions{}
+
+			shelves, _, err := svc.Client.Shelves.List(opts)
+			if err != nil {
+				log.Fatalf("error in List(): %v", err)
+			}
+
+			for _, v := range shelves {
+				fmt.Printf("Id: %d, Title: %v \n", *v.ID, *v.Title)
+			}
+			return
+		}
 
 		if *flagShowBooks {
 			opts := &books.VolumesListOptions{
