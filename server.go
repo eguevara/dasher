@@ -89,7 +89,6 @@ func appHandlers(cfg *config.AppConfig) http.Handler {
 	// Using gorilla mux for richer routing
 	r := mux.NewRouter()
 	r.Handle(versionPath, api.VersionHandler(version)).Methods("GET")
-	r.Handle(realtimePrefix, api.RealTimeHandler(cfg)).Methods("GET")
 
 	books := api.NewBooksHandler(cfg)
 	r.HandleFunc("/v1/books", books.List).Methods("GET")
