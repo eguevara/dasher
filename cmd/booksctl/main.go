@@ -9,6 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/go-github/github"
+
+	"github.com/eguevara/dasher/pkg/githubbooks"
+
 	"github.com/eguevara/dasher/api"
 	"github.com/eguevara/dasher/config"
 	"github.com/eguevara/dasher/pkg/feelinglucky"
@@ -26,16 +30,49 @@ var defaultHomeDirectory = os.Getenv("HOME")
 func main() {
 
 	var (
-		flagConfigPath = flag.String("config-file", defaultConfigFile, "application configuration file")
-		flagBookID     = flag.String("book-id", "", "the id of the book")
-		flagShowBooks  = flag.Bool("show-books", false, "show all books for a shelf")
-		flagShowBookShelf  = flag.Bool("show-bookshelf", false, "show all bookshelfs")
-		flagLucky      = flag.Bool("feeling-lucky", false, "feeling lucky")
+		flagConfigPath      = flag.String("config-file", defaultConfigFile, "application configuration file")
+		flagBookID          = flag.String("book-id", "", "the id of the book")
+		flagShowBooks       = flag.Bool("show-books", false, "show all books for a shelf")
+		flagGitHubShowBooks = flag.Bool("show-ghbooks", false, "show all github books")
+		flagShowBookShelf   = flag.Bool("show-bookshelf", false, "show all bookshelfs")
+		flagLucky           = flag.Bool("feeling-lucky", false, "feeling lucky")
 	)
 
 	flag.Parse()
 
 	cfg := buildConfigFromFie(flagConfigPath)
+
+	if *flagGitHubShowBooks {
+		opts := &githubbooks.Request{
+			Config: cfg,
+		}
+		githubService := githubbooks.NewService(opts)
+
+		googleBookService := api.NewBooksHandler(cfg)
+
+		books, _, err := googleBookService.Client.Volumes.List("1", nil)
+		if err != nil {
+			fmt.Printf("could not find any books in this shelf: %v", err)
+		}
+
+		for _, book := range books {
+			fmt.Printf("Book: %v, ID: %v\n\n", *book.Info.Title, *book.ID)
+
+			bookOpt := &github.IssueRequest{
+				Title:  book.Info.Title,
+				Labels: &[]string{"google-books"},
+			}
+			ghIssue, err := githubService.AddBook(bookOpt)
+
+			if err != nil {
+				log.Fatalf("error in List(): %v", err)
+			}
+
+			fmt.Printf("Adding book: %v", ghIssue.Title)
+
+		}
+		return
+	}
 
 	if *flagLucky == true {
 		opts := &feelinglucky.Request{

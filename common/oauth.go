@@ -1,9 +1,12 @@
 package common
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/google/go-github/github"
 
 	"github.com/eguevara/dasher/config"
 	"golang.org/x/oauth2"
@@ -33,4 +36,13 @@ func GetOAuthClient(cfg *config.OAuthConfig) *http.Client {
 	// Return an OAuth http client based on private key from service account.
 	return conf.Client(oauth2.NoContext)
 
+}
+
+// GetGithubClient returns a github client using access token.
+func GetGithubClient(cfg *config.GitHubConfig) *github.Client {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.Token})
+	tc := oauth2.NewClient(ctx, ts)
+
+	return github.NewClient(tc)
 }
