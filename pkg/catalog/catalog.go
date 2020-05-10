@@ -2,6 +2,8 @@ package catalog
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"os"
 )
 
@@ -59,6 +61,9 @@ func (l librarian) ReadCards() (cards Cards, err error) {
 	defer file.Close()
 
 	if err := json.NewDecoder(file).Decode(&cards); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
