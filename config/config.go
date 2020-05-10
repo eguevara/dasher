@@ -14,6 +14,7 @@ type AppConfig struct {
 	BooksVolumesMax    *int          `json:"booksVolumesMax"`
 	BooksVolumesFields *string       `json:"booksVolumesFields"`
 	GitHub             *GitHubConfig `json:"github"`
+	CatalogFilename    string        `json:"catalogFilePath"`
 }
 
 // OAuthConfig stores oauth settings

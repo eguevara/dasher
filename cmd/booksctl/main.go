@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,6 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/eguevara/dasher/pkg/catalog"
 
 	"github.com/google/go-github/github"
 
@@ -21,9 +25,10 @@ import (
 )
 
 const (
-	defaultDotFolder  = ".booksctl"
-	defaultConfigFile = "config.json"
-	defaultPEMFile    = "booksctl.pem"
+	defaultDotFolder   = ".booksctl"
+	defaultConfigFile  = "config.json"
+	defaultPEMFile     = "booksctl.pem"
+	defaultCatalogFile = "catalog.json"
 )
 
 var defaultHomeDirectory = os.Getenv("HOME")
@@ -81,7 +86,7 @@ func main() {
 		for _, book := range books {
 			_, found, err := githubService.BookExists(*book.Info.Title)
 			if err != nil || found {
-				log.Printf("Skipping book: %v", err)
+				log.Printf("Skipping book: %v", *book.Info.Title)
 				continue
 			}
 
@@ -97,7 +102,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("error in List(): %v", err)
 			}
-			fmt.Printf("Adding book: %v, %v - %v\n", *book.Info.Title, bookOpt, *ghIssue.Title)
+			fmt.Printf("Adding book: %v\n", *ghIssue.Title)
 
 		}
 		return
@@ -108,6 +113,14 @@ func main() {
 		}
 		githubService := githubbooks.NewService(opts)
 		googleBookService := api.NewBooksHandler(cfg)
+
+		// Set up the local caching for our catalog.
+		catalogOpts := catalog.Options{Name: cfg.CatalogFilename}
+		librarian := catalog.New(catalogOpts)
+		cards, err := librarian.ReadCards()
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		volumeOpts := &books.VolumesListOptions{
 			MaxResults: 100,
@@ -147,10 +160,20 @@ func main() {
 						continue
 					}
 
+					commentHash := buildCommentHash(note)
 					ghComment := buildComment(note)
-					_, err := githubService.AddNote(*githubBook.Number, ghComment)
-					if err != nil {
-						log.Fatalf("error: %v", err)
+
+					if card, found := cards.Find(commentHash); !found {
+						_, err := githubService.AddNote(*githubBook.Number, ghComment)
+						if err != nil {
+							log.Fatalf("error: %v", err)
+						}
+
+						// Add to our local cache card catalog.
+						log.Printf("Adding note: %v - %v\n", *githubBook.Title, commentHash)
+						cards = append(cards, &catalog.Card{Title: *githubBook.Title, KeyHash: commentHash})
+					} else {
+						log.Printf("Found note in cache: %v - %v\n", card.Title, card.KeyHash)
 					}
 
 				}
@@ -169,6 +192,12 @@ func main() {
 			//fmt.Printf(resp.s)
 			fmt.Printf("Count: %v\n\n", totalNotes)
 		}
+
+		err = librarian.Write(cards)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		return
 	}
 
@@ -242,6 +271,13 @@ func main() {
 
 }
 
+// buildCommentHash returns a hashed string of the annotated note.
+func buildCommentHash(note books.Annotation) string {
+	selectedText := *note.SelectedText
+	hash := md5.Sum([]byte(selectedText))
+	return hex.EncodeToString(hash[:])
+}
+
 // buildComment takes a note and builds a comment used as an annotation.
 // Returns a String
 func buildComment(note books.Annotation) string {
@@ -270,6 +306,8 @@ func buildConfigFromFie(file *string) *config.AppConfig {
 	if config.BooksOAuth.PrivateFilePath == "" {
 		config.BooksOAuth.PrivateFilePath = filepath.Join(defaultHomeDirectory, defaultDotFolder, defaultPEMFile)
 	}
+
+	config.CatalogFilename = filepath.Join(defaultHomeDirectory, defaultDotFolder, defaultCatalogFile)
 
 	return config
 }
