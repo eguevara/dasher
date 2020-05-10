@@ -4,10 +4,10 @@ import "testing"
 
 func Test_librarian_Write(t *testing.T) {
 	type fields struct {
-		catalog CatalogOptions
+		catalog Options
 	}
 	type args struct {
-		cards []Card
+		cards Cards
 	}
 	tests := []struct {
 		name    string

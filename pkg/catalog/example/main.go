@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/eguevara/dasher/pkg/catalog"
 )
 
 func main() {
 
-	opts := catalog.CatalogOptions{
+	opts := catalog.Options{
 		Name: ".catalog",
 	}
 
@@ -28,7 +29,7 @@ func main() {
 	// Reading local cards into Cards.
 	cards, err := librarian.GetAll()
 	if err != nil {
-		fmt.Errorf("Geting all Cards: %v\n", err)
+		log.Fatal(err)
 	}
 
 	// Append new card or skip already existing card.
@@ -42,6 +43,6 @@ func main() {
 	// Writing Cards to local cache.
 	err = librarian.Write(cards)
 	if err != nil {
-		fmt.Printf("Error: %v \n ", err)
+		log.Fatal(err)
 	}
 }

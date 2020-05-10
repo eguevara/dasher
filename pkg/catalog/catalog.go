@@ -5,7 +5,8 @@ import (
 	"os"
 )
 
-type CatalogOptions struct {
+// Options holds the options for a Catalog.
+type Options struct {
 	Name string
 }
 
@@ -19,12 +20,13 @@ type Librarian interface {
 }
 
 type librarian struct {
-	catalog CatalogOptions
+	catalog Options
 }
 
 var _ Librarian = librarian{}
 
-func New(catalog CatalogOptions) Librarian {
+// New returns a new catalog.
+func New(catalog Options) Librarian {
 	return librarian{
 		catalog: catalog,
 	}

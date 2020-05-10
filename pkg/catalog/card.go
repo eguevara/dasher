@@ -1,7 +1,9 @@
 package catalog
 
+// KeyHash is the unique key used for identity.
 type KeyHash string
 
+// Card holds information stored in a catalog.
 type Card struct {
 	// Title is the title of the book.
 	Title string
@@ -10,8 +12,10 @@ type Card struct {
 	KeyHash KeyHash
 }
 
+// Cards are a list of Card.
 type Cards []*Card
 
+// Find will look through a list of cards.
 func (c Cards) Find(title string) (*Card, bool) {
 	for _, card := range c {
 		if card.Title == title {
