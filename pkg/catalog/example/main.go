@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"log"
 
@@ -32,12 +34,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Lets create a unique has for the note to store and lookup.
+	hash := md5.Sum([]byte("testing blood did not work well at the end."))
+	key := hex.EncodeToString(hash[:])
+
 	// Append new card or skip already existing card.
-	if card, found := cards.Find("Bad Blood"); found {
-		fmt.Printf("Found card, letas update: %v\n", card.Title)
+	if card, found := cards.Find(key); found {
+		fmt.Printf("Found card, letas update: %v - %v\n", card.Title, card.KeyHash)
 	} else {
 		fmt.Println("Inserting new card to catalog")
-		cards = append(cards, &catalog.Card{Title: "Bad Blood"})
+		cards = append(cards, &catalog.Card{Title: "Bad Blood", KeyHash: key})
 	}
 
 	// Writing Cards to local cache.
