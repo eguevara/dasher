@@ -15,8 +15,8 @@ type Librarian interface {
 	// Add will add a new annotation to the catalog.
 	Write(Cards) error
 
-	// GetAll will return all of the annotations available in the catalog.
-	GetAll() (Cards, error)
+	// ReadCards will return all of the annotations available in the catalog.
+	ReadCards() (Cards, error)
 }
 
 type librarian struct {
@@ -50,7 +50,7 @@ func (l librarian) Write(cards Cards) error {
 }
 
 // Get will return all cards in a catalog.
-func (l librarian) GetAll() (cards Cards, err error) {
+func (l librarian) ReadCards() (cards Cards, err error) {
 	file, err := os.OpenFile(l.catalog.Name, os.O_RDWR, 0644)
 	if err != nil {
 		return nil, err

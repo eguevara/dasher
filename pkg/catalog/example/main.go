@@ -27,7 +27,7 @@ func main() {
 	//}
 
 	// Reading local cards into Cards.
-	cards, err := librarian.GetAll()
+	cards, err := librarian.ReadCards()
 	if err != nil {
 		log.Fatal(err)
 	}
